@@ -1,0 +1,71 @@
+# Parameters
+param r := 2;
+param m := 15000;
+param beta1 := 4.8e-7;
+param beta2 := 4.7e-7;
+param alpha := 0.001;
+param rho := 0.01;
+param d := 0.02;
+param delta := 0.5;
+param rho1 := 0.001;
+param n := 1200;
+param mu := 3;
+param rho2 := 0.5;
+param c1 := 0.021;
+param b1 := 0.2;
+param c2 := 1e-11;
+param b2 := 0.1;
+param E1 := 1;
+param E2 := 10;
+
+# Time horizon
+param tf := 10;
+param N := 1000;
+param dt := tf / (N - 1);
+
+# Variables
+var x {0..N-1};
+var y {0..N-1};
+var v {0..N-1};
+var z {0..N-1};
+var w {0..N-1};
+var u1 {0..N-1} >= 0, <= 1;
+var u2 {0..N-1} >= 0, <= 1;
+
+# Initial conditions
+let x[0] := 200;
+let y[0] := 80;
+let v[0] := 12000;
+let z[0] := 50;
+let w[0] := 100;
+
+# Objective function
+maximize Obj:
+    sum {t in 0..N-1} (x[t] + z[t] + w[t] - v[t] - E1/2 * u1[t]^2 - E2/2 * u2[t]^2) * dt;
+
+# State equations
+subject to Dynamics1 {t in 0..N-2}:
+    x[t+1] = x[t] + dt * (r * x[t] * (1 - (x[t] + y[t]) / m) - (1 - u1[t]) * beta1 * v[t] * x[t] / (1 + alpha * v[t]) - beta2 * x[t] * y[t] + rho * y[t] - d * x[t]);
+
+subject to Dynamics2 {t in 0..N-2}:
+    y[t+1] = y[t] + dt * ((1 - u1[t]) * beta1 * v[t] * x[t] / (1 + alpha * v[t]) + beta2 * x[t] * y[t] - (delta + rho) * y[t] - rho1 * y[t] * z[t]);
+
+subject to Dynamics3 {t in 0..N-2}:
+    v[t+1] = v[t] + dt * ((1 - u2[t]) * n * delta * y[t] - mu * v[t] - rho2 * v[t] * w[t]);
+
+subject to Dynamics4 {t in 0..N-2}:
+    z[t+1] = z[t] + dt * (c1 * y[t] * z[t] - b1 * z[t]);
+
+subject to Dynamics5 {t in 0..N-2}:
+    w[t+1] = w[t] + dt * (c2 * v[t] * w[t] - b2 * w[t]);
+
+solve;
+
+# Display results
+display x;
+display y;
+display v;
+display z;
+display w;
+display u1;
+display u2;
